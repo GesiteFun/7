@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make 24 Game</title>
+    <style>
+        /* General Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', 'Verdana', sans-serif; /* Example bold/fun font */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6dd5ed, #2193b0); /* Example Gradient: Blue */
+            color: #333;
+            padding: 15px;
+        }
+
+        /* Game Container */
+        .game-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #2193b0;
+            font-weight: 700;
+            font-size: 2.5em;
+        }
+
+        /* Status Bar (Timer, Score) */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #555;
+        }
+
+        #timer span, #score span, #high-score span {
+            font-weight: 700;
+            color: #e67e22;
+        }
+
+        /* Game Controls Wrapper */
+        #game-controls.controls-inactive {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+         #game-controls.controls-inactive .number-card,
+         #game-controls.controls-inactive .operator-btn,
+         #game-controls.controls-inactive #check-btn,
+         #game-controls.controls-inactive #clear-btn {
+            pointer-events: none; /* Explicitly disable pointer events on children */
+         }
+
+
+        /* Numbers Display */
+        #numbers-display {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .number-card {
+            background-color: #3498db;
+            color: white;
+            padding: 18px 22px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.8em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease, opacity 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .number-card:hover:not(:disabled) { /* Only apply hover when not disabled */
+            transform: translateY(-3px);
+            background-color: #2980b9;
+        }
+
+        .number-card:active:not(:disabled) { /* Only apply active when not disabled */
+            transform: translateY(1px);
+        }
+
+        .number-card.used {
+            opacity: 0.6 !important; /* Make used stand out more */
+            cursor: not-allowed;
+            background-color: #95a5a6 !important; /* Darker grey */
+            transform: none;
+        }
+         /* Ensure disabled state overrides hover/active visually too */
+        .number-card:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background-color: #bdc3c7;
+            transform: none;
+        }
+
+        /* Expression Display */
+        #expression-display {
+            background-color: #ecf0f1;
+            border: 2px dashed #bdc3c7;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 60px;
+            margin-bottom: 25px;
+            font-size: 1.6em;
+            font-weight: 600;
+            color: #2c3e50;
+            word-wrap: break-word;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.4;
+             transition: background-color 0.3s ease; /* Add transition */
+        }
+         #game-controls.controls-inactive #expression-display {
+            background-color: #e0e4e5; /* Slightly dimmer when inactive */
+         }
+
+
+        /* Operators */
+        #operators {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .operator-btn {
+            background-color: #e67e22;
+            color: white;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.6em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease, opacity 0.3s ease;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .operator-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            background-color: #d35400;
+        }
+
+        .operator-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+         .operator-btn:disabled {
+             opacity: 0.5;
+             cursor: not-allowed;
+             transform: none;
+             background-color: #f39c12;
+         }
+
+        /* Action Buttons */
+        #actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .action-btn:active:not(:disabled) {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-btn:disabled {
+             opacity: 0.5;
+             cursor: not-allowed;
+             transform: none;
+             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #start-btn {
+            background-color: #9b59b6; /* Purple */
+            color: white;
+        }
+        #start-btn:hover:not(:disabled) { background-color: #8e44ad; }
+
+        #check-btn { background-color: #2ecc71; color: white; }
+        #check-btn:hover:not(:disabled) { background-color: #27ae60; }
+
+        #clear-btn { background-color: #f1c40f; color: #5f4c04; }
+        #clear-btn:hover:not(:disabled) { background-color: #f39c12; }
+
+        #shuffle-btn { background-color: #3498db; color: white; }
+        #shuffle-btn:hover:not(:disabled) { background-color: #2980b9; }
+
+        /* Feedback Area */
+        #feedback {
+            margin-top: 20px;
+            font-size: 1.3em;
+            font-weight: 700;
+            min-height: 30px;
+            transition: color 0.3s ease;
+        }
+
+        .correct { color: #27ae60; }
+        .incorrect { color: #e74c3c; }
+
+         /* Utility Class */
+        .hidden {
+            display: none !important; /* Force hide */
+        }
+
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .game-container { padding: 20px 15px; }
+            h1 { font-size: 2em; }
+            .status-bar { font-size: 1em; flex-direction: column; align-items: center; gap: 5px; }
+            .number-card { font-size: 1.6em; padding: 15px 18px; min-width: 55px; }
+            #expression-display { font-size: 1.4em; min-height: 50px; padding: 12px; }
+            .operator-btn { font-size: 1.4em; padding: 10px 15px; min-width: 45px; }
+            #actions { gap: 10px; }
+            .action-btn { padding: 10px 20px; font-size: 1em; width: calc(50% - 10px); }
+             #shuffle-btn, #start-btn { width: calc(100% - 10px); }
+             #actions { flex-direction: column; align-items: center;} /* Stack action buttons */
+            #feedback { font-size: 1.2em; }
+        }
+
+         @media (max-width: 380px) {
+             .number-card { font-size: 1.4em; padding: 12px 15px; min-width: 50px; }
+             .operator-btn { font-size: 1.3em; }
+         }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Make 24</h1>
+
+        <div class="status-bar">
+            <div id="timer">Waktu: <span>--</span>s</div> <div id="score">Skor: <span>0</span></div>
+            <div id="high-score">High Score: <span>0</span></div>
+        </div>
+
+        <div id="game-controls" class="controls-inactive">
+            <div id="numbers-display">
+                </div>
+
+            <div id="expression-display"></div>
+
+            <div id="operators">
+                <button class="operator-btn" data-op="+">+</button>
+                <button class="operator-btn" data-op="-">-</button>
+                <button class="operator-btn" data-op="*">&times;</button>
+                <button class="operator-btn" data-op="/">&divide;</button>
+                <button class="operator-btn" data-op="(">(</button>
+                <button class="operator-btn" data-op=")">)</button>
+            </div>
+        </div>
+
+        <div id="actions">
+             <button id="check-btn" class="action-btn">Periksa</button>
+            <button id="clear-btn" class="action-btn">Hapus</button>
+            <button id="start-btn" class="action-btn">Mulai Game</button>
+            <button id="shuffle-btn" class="action-btn hidden">Acak Baru</button>
+        </div>
+
+        <div id="feedback">Klik "Mulai Game" untuk memulai!</div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const gameControls = document.getElementById('game-controls');
+        const numbersDisplay = document.getElementById('numbers-display');
+        const expressionDisplay = document.getElementById('expression-display');
+        const operatorButtons = document.querySelectorAll('.operator-btn');
+        const checkButton = document.getElementById('check-btn');
+        const clearButton = document.getElementById('clear-btn');
+        const startButton = document.getElementById('start-btn');
+        const shuffleButton = document.getElementById('shuffle-btn');
+        const feedbackDisplay = document.getElementById('feedback');
+        const timerDisplay = document.getElementById('timer').querySelector('span');
+        const scoreDisplay = document.getElementById('score').querySelector('span');
+        const highScoreDisplay = document.getElementById('high-score').querySelector('span');
+
+        // Game State
+        let currentNumbers = [];
+        let expression = [];
+        let usedNumberIndices = new Set();
+        let score = 0;
+        let highScore = localStorage.getItem('make24HighScore') || 0;
+        let timerValue = 60;
+        let timerInterval = null;
+        let gameActive = false; // Is a round currently playable (timer running)?
+        let isGameStarted = false; // Has the "Start Game" button been pressed at least once?
+
+        // --- Core Logic ---
+
+        function getRandomNumbers() {
+            const numbers = [];
+            while (numbers.length < 4) {
+                numbers.push(Math.floor(Math.random() * 9) + 1); // Numbers 1-9
+            }
+            return numbers;
+        }
+
+        function displayNumbers() {
+            numbersDisplay.innerHTML = ''; // Clear previous numbers
+            currentNumbers.forEach((num, index) => {
+                const card = document.createElement('button');
+                card.classList.add('number-card');
+                card.textContent = num;
+                card.dataset.value = num;
+                card.dataset.index = index;
+                 // Disable cards based on game state, not just 'used' status initially
+                card.disabled = !gameActive || usedNumberIndices.has(index);
+                if (usedNumberIndices.has(index)) {
+                     card.classList.add('used');
+                } else {
+                     card.classList.remove('used');
+                }
+                card.addEventListener('click', () => handleNumberClick(num, index, card));
+                numbersDisplay.appendChild(card);
+            });
+        }
+
+
+        function updateExpressionDisplay() {
+            expressionDisplay.textContent = expression.map(item => item.value).join(' ');
+        }
+
+        function handleNumberClick(number, index, cardElement) {
+            // Only allow clicks if a round is active and the card isn't used
+            if (!gameActive || usedNumberIndices.has(index)) return;
+
+            const lastItem = expression.length > 0 ? expression[expression.length - 1] : null;
+            if (lastItem && lastItem.type === 'number') {
+                 showFeedback("Tambahkan operator dulu!", "incorrect", 2000);
+                 return;
+            }
+
+            expression.push({ type: 'number', value: number, index: index });
+            usedNumberIndices.add(index);
+            cardElement.classList.add('used');
+            cardElement.disabled = true; // Disable the specific card
+            updateExpressionDisplay();
+            clearFeedback(); // Clear any previous error messages
+        }
+
+        function handleOperatorClick(operator) {
+            if (!gameActive) return; // Only allow clicks if a round is active
+
+            const lastItem = expression.length > 0 ? expression[expression.length - 1] : null;
+
+            // Basic validation (same as before, but now relies on gameActive)
+             if (expression.length === 0 && !['(', '-'].includes(operator)) {
+                  showFeedback("Masukkan angka dulu!", "incorrect", 2000);
+                  return;
+             }
+            if (lastItem && lastItem.type === 'operator' && !['(', ')'].includes(lastItem.value) && !['(', ')'].includes(operator)) {
+                 showFeedback("Operator tidak valid!", "incorrect", 2000);
+                 return;
+            }
+            if (lastItem && lastItem.value === '(' && !['-', '('].includes(operator)) {
+                 showFeedback("Masukkan angka setelah '('!", "incorrect", 2000);
+                 return;
+            }
+            if (lastItem && lastItem.value === ')' && (operator === '(' || !isNaN(parseInt(operator)))) {
+                 showFeedback("Tambahkan operator setelah ')'!", "incorrect", 2000);
+                 return;
+            }
+
+            expression.push({ type: 'operator', value: operator });
+            updateExpressionDisplay();
+            clearFeedback();
+        }
+
+        function clearExpression() {
+            expression = [];
+            usedNumberIndices.clear();
+            updateExpressionDisplay();
+             // Re-enable number cards *if* game is active
+            document.querySelectorAll('.number-card').forEach(card => {
+                 card.classList.remove('used');
+                 card.disabled = !gameActive; // Only enable if game is active
+            });
+            clearFeedback();
+        }
+
+        // --- Evaluation (Simplified & Safer Approach - unchanged) ---
+        function evaluateExpression() {
+            if (usedNumberIndices.size !== 4) {
+                 showFeedback(`Gunakan semua ${currentNumbers.length} angka!`, "incorrect", 3000);
+                return null;
+            }
+
+            let expressionString = expression.map(item => {
+                if (item.value === '×') return '*';
+                if (item.value === '÷') return '/';
+                return item.value;
+             }).join('');
+
+            const allowedChars = /^[0-9+\-*/().\s]+$/;
+             if (!allowedChars.test(expressionString)) {
+                 showFeedback("Ekspresi tidak valid!", "incorrect", 3000);
+                 return null;
+             }
+
+            let balance = 0;
+            for (const char of expressionString) {
+                if (char === '(') balance++;
+                else if (char === ')') balance--;
+                if (balance < 0) {
+                    showFeedback("Kurung tidak seimbang!", "incorrect", 3000);
+                    return null;
+                 }
+            }
+             if (balance !== 0) {
+                 showFeedback("Kurung tidak seimbang!", "incorrect", 3000);
+                 return null;
+            }
+
+            try {
+                const result = new Function(`"use strict"; return (${expressionString});`)();
+                if (!isFinite(result)) {
+                    showFeedback("Tidak bisa dibagi nol!", "incorrect", 3000);
+                    return null;
+                }
+                return result;
+            } catch (error) {
+                console.error("Evaluation Error:", error);
+                showFeedback("Ekspresi Error!", "incorrect", 3000);
+                return null;
+            }
+        }
+
+        // --- Game Flow ---
+
+        function checkSolution() {
+             if (!gameActive) return; // Can only check if game is active
+
+            const result = evaluateExpression();
+
+            if (result === null) {
+                return; // Error message handled within evaluateExpression
+            }
+
+            if (Math.abs(result - 24) < 0.0001) {
+                showFeedback("Benar! Kerja Bagus!", "correct");
+                score++;
+                updateScoreDisplay();
+                stopTimer(); // Stop timer, round over
+                // gameActive becomes false in stopTimer()
+                if (score > highScore) {
+                    highScore = score;
+                    saveHighScore();
+                    updateHighScoreDisplay();
+                }
+                // Make shuffle the prominent action now
+                shuffleButton.focus();
+            } else {
+                showFeedback(`Salah! Hasilnya ${result.toFixed(2)}, bukan 24.`, "incorrect");
+                // Optionally clear expression on incorrect? Or let user fix? Let's let them fix.
+                // clearExpression();
+            }
+        }
+
+         function showFeedback(message, type = "", duration = 0) {
+            feedbackDisplay.textContent = message;
+            feedbackDisplay.className = type;
+
+            if (duration > 0) {
+                 setTimeout(clearFeedback, duration);
+            }
+        }
+
+        function clearFeedback() {
+             // Only clear if it's not the initial message
+             if(feedbackDisplay.textContent !== 'Klik "Mulai Game" untuk memulai!'){
+                 feedbackDisplay.textContent = '';
+                 feedbackDisplay.className = '';
+             }
+        }
+
+
+        function startTimer() {
+            stopTimer(); // Clear any existing timer
+            timerValue = 60; // Reset timer
+            timerDisplay.textContent = timerValue;
+            gameActive = true; // The round is now active
+            enableControls(); // Ensure controls are enabled
+
+            timerInterval = setInterval(() => {
+                timerValue--;
+                timerDisplay.textContent = timerValue;
+                if (timerValue <= 0) {
+                    stopTimer(); // This sets gameActive = false
+                    showFeedback("Waktu Habis!", "incorrect");
+                    disableControls(); // Disable controls after time runs out
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            gameActive = false; // The round is no longer active
+        }
+
+         // Controls enabling/disabling
+         function disableControls() {
+            gameControls.classList.add('controls-inactive');
+            // Also disable check/clear buttons specifically if they are outside the wrapper
+            checkButton.disabled = true;
+            clearButton.disabled = true;
+             // Disable number cards individually too for clarity
+            document.querySelectorAll('.number-card').forEach(card => card.disabled = true);
+             // Disable operators
+            operatorButtons.forEach(btn => btn.disabled = true);
+         }
+
+         function enableControls() {
+            gameControls.classList.remove('controls-inactive');
+            checkButton.disabled = false;
+            clearButton.disabled = false;
+            // Enable number cards (displayNumbers will handle 'used' status)
+            document.querySelectorAll('.number-card').forEach(card => {
+                // Enable only if not already used in expression
+                const index = parseInt(card.dataset.index);
+                 card.disabled = usedNumberIndices.has(index);
+            });
+             // Enable operators
+             operatorButtons.forEach(btn => btn.disabled = false);
+         }
+
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = score;
+        }
+
+        function updateHighScoreDisplay() {
+            highScoreDisplay.textContent = highScore;
+        }
+
+        function saveHighScore() {
+            localStorage.setItem('make24HighScore', highScore);
+        }
+
+         // Renamed from startNewRound to emphasize it's triggered by user action after initial start
+         function shuffleAndStart() {
+             stopTimer();
+             clearExpression(); // Resets used numbers and enables cards
+             currentNumbers = getRandomNumbers();
+             displayNumbers(); // Display new numbers (will be enabled by startTimer)
+             clearFeedback();
+             startTimer(); // Start the timer for the new round
+         }
+
+        function handleStartGameClick() {
+            if (isGameStarted) return; // Prevent multiple starts without shuffle
+
+            isGameStarted = true;
+            startButton.classList.add('hidden'); // Hide Start button
+            shuffleButton.classList.remove('hidden'); // Show Shuffle button
+            shuffleButton.disabled = false; // Ensure shuffle is enabled
+
+             clearFeedback(); // Clear initial message
+             // No need to generate numbers again if we did in initialize
+             startTimer(); // This enables controls and starts the clock
+         }
+
+
+        function initializeGame() {
+            updateHighScoreDisplay();
+            updateScoreDisplay();
+            timerDisplay.textContent = timerValue; // Show initial timer value (e.g., 60)
+
+             // Generate initial set of numbers BUT keep controls disabled
+            currentNumbers = getRandomNumbers();
+            displayNumbers(); // Display cards, they will be disabled by default logic initially
+            disableControls(); // Explicitly disable controls
+
+            // Setup Event Listeners
+            // Operators listener setup (no changes needed)
+            operatorButtons.forEach(button => {
+                button.addEventListener('click', () => handleOperatorClick(button.dataset.op));
+            });
+
+            checkButton.addEventListener('click', checkSolution);
+            clearButton.addEventListener('click', clearExpression);
+            startButton.addEventListener('click', handleStartGameClick);
+            shuffleButton.addEventListener('click', shuffleAndStart); // Shuffle now starts a new timed round
+
+
+            // Initial state: Show start button, hide shuffle, controls disabled
+            startButton.classList.remove('hidden');
+            shuffleButton.classList.add('hidden');
+            shuffleButton.disabled = true; // Disable shuffle until game starts
+            showFeedback('Klik "Mulai Game" untuk memulai!', ""); // Initial prompt
+        }
+
+        // --- Initialize ---
+        document.addEventListener('DOMContentLoaded', initializeGame);
+
+    </script>
+
+</body>
+</html>
